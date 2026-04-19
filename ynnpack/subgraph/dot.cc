@@ -44,9 +44,17 @@ namespace ynn {
 
 namespace {
 
-// TODO(dsharlet): This should probably be a parameter we learn based on cpuinfo
-// or other source of CPU metadata. This was determined experimentally.
-constexpr index_t cache_size_l2 = 128 * 1024;
+// Effective L2 cache budget for kc-blocking in schedule_dot. Sized so that a
+// (kc × N) stripe of B fits in this many bytes — see the formula in
+// kernels/dot/schedule.cc.
+//
+// This is intentionally a fixed guess, not the running CPU's reported L2, so
+// that tiling decisions (and therefore numerical results for non-associative
+// float math) are consistent across hardware. 1 MiB is a reasonable single
+// guess covering both typical x86 L2 (512 KiB–1 MiB per core on modern parts)
+// and ARM L2 (512 KiB–1 MiB per core on Cortex-A7xx / Neoverse, with gradual
+// spillover into the outer SLC on Apple M-series and Neoverse).
+constexpr index_t cache_size_l2 = 1024 * 1024;
 
 // When we want arithmetic to be consistent, we need to make all tiling
 // decisions independently of any hardware dependent parameters (cache sizes,
